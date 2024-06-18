@@ -1,4 +1,4 @@
-package br.com.inventorycontrol.configuration.controllers;
+package br.com.inventorycontrol.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
