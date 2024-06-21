@@ -21,7 +21,7 @@ public class UserController {
     private final UserMapper mapper = Mappers.getMapper(UserMapper.class);
 
     @GetMapping("/{id}")
-    public ResponseEntity<UserDto> findById(@PathVariable("id") Long id){
+    public ResponseEntity<UserDto> show(@PathVariable("id") Long id){
         try{
             User user = service.findById(id);
             UserDto userDto = mapper.toDto(user);
@@ -31,22 +31,22 @@ public class UserController {
         }
     }
     @PutMapping("/")
-    public ResponseEntity<UserDto> putUser(@RequestBody @Valid UserDto userDto){
-        return salvarDados(userDto, true);
+    public ResponseEntity<UserDto> update(@RequestBody @Valid UserDto userDto){
+        return save(userDto, true);
     }
 
-    @PostMapping("/")
-    public ResponseEntity<UserDto> postUser( ){
+    @PostMapping("/create")
+    public ResponseEntity<UserDto> store( ){
         return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toDto(service.save(new User())));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable("id") Long id){
+    public ResponseEntity<Void> destroy(@PathVariable("id") Long id){
         service.delete(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
-    private ResponseEntity<UserDto> salvarDados(UserDto userDto, boolean update) {
+    private ResponseEntity<UserDto> save(UserDto userDto, boolean update) {
         try{
             User user = mapper.toEntity(userDto);
             service.save(user);
