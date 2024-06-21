@@ -11,6 +11,10 @@ import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -46,7 +50,7 @@ public class ProductServiceTests {
     void whenFindByIdThenReturnAnProductInstance() {
         // forma sem o import statico
         // Mockito.when(repository.findById(Mockito.anyInt())).thenReturn(optionalUser);
-        when(productRepository.findById(1L)).thenReturn(productOptional);
+        when(productRepository.findById(1L)).thenReturn(this.productOptional);
         Product response = productService.findById(1L);
         productDto = productMapper.toDto(product);
 
@@ -59,16 +63,21 @@ public class ProductServiceTests {
 
     @Test
     void whenFindAllThenReturnAnListOfProducts() {
-        when(productRepository.findAll()).thenReturn(List.of(product));
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Product> productPage = new PageImpl<>(List.of(product), pageable, 1);
 
-        List<Product> response = productService.findAll();
+
+        when(productRepository.findAll(pageable)).thenReturn(productPage);
+
+        Page<Product> response = productService.findAll(pageable);
+
         assertNotNull(response);
-        assertEquals(1,response.size());
-        assertEquals(Product.class, response.getFirst().getClass());
+        assertEquals(1, response.getTotalElements());
+        assertEquals(Product.class, response.getContent().get(0).getClass());
 
-        assertNotNull(response.getFirst().getId());
-        assertNotNull(response.getFirst().getName());
-        assertNotNull(response.getFirst().getDescription());
+        assertNotNull(response.getContent().getFirst().getId());
+        assertNotNull(response.getContent().getFirst().getName());
+        assertNotNull(response.getContent().getFirst().getDescription());
     }
 
     private void startProduct() {

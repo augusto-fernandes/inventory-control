@@ -8,25 +8,25 @@ import jakarta.persistence.NoResultException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.mapstruct.factory.Mappers;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/product")
 @RequiredArgsConstructor
 public class ProductController {
-    private final ProductService productService;
-    private final ProductMapper productMapper = Mappers.getMapper(ProductMapper.class);
+    private final ProductService service;
+    private final ProductMapper mapper = Mappers.getMapper(ProductMapper.class);
 
     @GetMapping("/{id}")
-    public ResponseEntity<ProductDto> findById(@PathVariable("id") Long id){
+    public ResponseEntity<ProductDto> show(@PathVariable("id") Long id){
         try{
-            Product product = productService.findById(id);
-            ProductDto productDto = productMapper.toDto(product);
+            Product product = service.findById(id);
+            ProductDto productDto = mapper.toDto(product);
             return ResponseEntity.ok(productDto);
         }catch (NoResultException noResultException){
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -34,31 +34,35 @@ public class ProductController {
     }
 
     @GetMapping("/")
-    ResponseEntity<List<ProductDto>> findAll(){
-        List<Product> productList = productService.findAll();
-        return ResponseEntity.ok(productList.stream().map(productMapper::toDto).collect(Collectors.toList()));
+    public ResponseEntity<Page<ProductDto>> index(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Product> productPage = service.findAll(pageable);
+        Page<ProductDto> productDtoPage = productPage.map(mapper::toDto);
+        return ResponseEntity.ok(productDtoPage);
     }
 
     @PutMapping("/")
-    public ResponseEntity<ProductDto> putUser(@RequestBody @Valid ProductDto productDto){
-        return salvarDados(productDto, true);
+    public ResponseEntity<ProductDto> update(@RequestBody @Valid ProductDto productDto){
+        return save(productDto, true);
     }
 
-    @PostMapping("/")
-    public ResponseEntity<ProductDto> postUser(@RequestBody @Valid ProductDto productDto ){
-        return salvarDados(productDto, false);
+    @PostMapping("/create")
+    public ResponseEntity<ProductDto> store(@RequestBody @Valid ProductDto productDto ){
+        return save(productDto, false);
     }
 
-    @DeleteMapping("{id}")
-    public ResponseEntity<Void> delete(@PathVariable("id") Long id){
-        productService.delete(id);
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> destroy(@PathVariable("id") Long id){
+        service.delete(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
-    private ResponseEntity<ProductDto> salvarDados(ProductDto productDto, boolean update) {
+    private ResponseEntity<ProductDto> save(ProductDto productDto, boolean update) {
         try{
-            Product product = productMapper.toEntity(productDto);
-           product = productService.save(product);
+            Product product = mapper.toEntity(productDto);
+           product = service.save(product);
             return update ?  ResponseEntity.status(HttpStatus.NO_CONTENT).body(productDto) : ResponseEntity.status(HttpStatus.CREATED).body(productDto) ;
         }catch (Exception e){
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
